@@ -24,6 +24,32 @@ return {
           ['\\'] = 'close_window',
         },
       },
+      hijack_netrw_behavior = 'open_current',
+      follow_current_file = {
+        enabled = true,
+        leave_dirs_open = false,
+      },
+      use_libuv_file_watcher = true,
+      filtered_items = {
+        visible = true,
+      },
     },
   },
+  config = function(_, opts)
+    require('neo-tree').setup(opts)
+
+    -- make neo-tree background transparent
+    local function set_transparent()
+      vim.api.nvim_set_hl(0, 'NeoTreeNormal', { bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'NeoTreeNormalNC', { bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'NeoTreeEndOfBuffer', { bg = 'NONE' })
+    end
+
+    set_transparent()
+
+    vim.api.nvim_create_autocmd('ColorScheme', {
+      pattern = '*',
+      callback = set_transparent,
+    })
+  end,
 }
