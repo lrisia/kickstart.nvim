@@ -22,6 +22,7 @@ return {
       window = {
         mappings = {
           ['\\'] = 'close_window',
+          ['<space>'] = 'none',
         },
       },
       hijack_netrw_behavior = 'open_current',
@@ -32,6 +33,27 @@ return {
       use_libuv_file_watcher = true,
       filtered_items = {
         visible = true,
+      },
+    },
+    sources = { 'filesystem', 'git_status' },
+    source_selector = {
+      truncation_character = '...',
+      winbar = true,
+      statusline = false,
+      content_layout = 'center',
+      tabs_layout = 'equal',
+      padding = { left = 1, right = 1 },
+      separator = { left = '', right = '  ' },
+      show_separator_on_edge = false,
+      sources = {
+        { source = 'filesystem', display_name = '\u{f024b} Files' },
+        { source = 'git_status', display_name = '\u{f02a2} Git' },
+      },
+    },
+    event_handlers = {
+      {
+        event = 'file_opened',
+        handler = function(file_path) require('neo-tree.command').execute { action = 'close' } end,
       },
     },
   },
@@ -47,9 +69,30 @@ return {
 
     set_transparent()
 
+    -- tab colors pulled from the current colorscheme (theme-agnostic)
+    local function apply_neotree_tabs()
+      local normal = vim.api.nvim_get_hl(0, { name = 'Normal', link = false })
+      local comment = vim.api.nvim_get_hl(0, { name = 'Comment', link = false })
+
+      local fg_main = normal.fg
+      local fg_dim = comment.fg
+
+      vim.api.nvim_set_hl(0, 'WinBar', { bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'WinBarNC', { bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'NeoTreeTabActive', { fg = fg_main, bg = 'NONE', bold = true })
+      vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorActive', { fg = fg_main, bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'NeoTreeTabInactive', { fg = fg_dim, bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorInactive', { fg = fg_dim, bg = 'NONE' })
+    end
+
+    apply_neotree_tabs()
+
     vim.api.nvim_create_autocmd('ColorScheme', {
       pattern = '*',
-      callback = set_transparent,
+      callback = function()
+        set_transparent()
+        apply_neotree_tabs()
+      end,
     })
   end,
 }
