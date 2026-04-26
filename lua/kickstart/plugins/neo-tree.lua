@@ -13,18 +13,39 @@ return {
   },
   lazy = false,
   keys = {
-    { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
+    {
+      '\\',
+      function()
+        local manager = require 'neo-tree.sources.manager'
+        local renderer = require 'neo-tree.ui.renderer'
+        for _, src in ipairs { 'filesystem', 'git_status' } do
+          local state = manager.get_state(src)
+          if state and renderer.window_exists(state) then
+            require('neo-tree.command').execute { action = 'close' }
+            return
+          end
+        end
+        local last = vim.g.neotree_last_source or 'filesystem'
+        if last == 'filesystem' then
+          vim.cmd 'Neotree reveal source=filesystem'
+        else
+          vim.cmd('Neotree focus source=' .. last)
+        end
+      end,
+      desc = 'NeoTree toggle',
+      silent = true,
+    },
   },
   ---@module 'neo-tree'
   ---@type neotree.Config
   opts = {
-    filesystem = {
-      window = {
-        mappings = {
-          ['\\'] = 'close_window',
-          ['<space>'] = 'none',
-        },
+    window = {
+      mappings = {
+        ['\\'] = 'close_window',
+        ['<space>'] = 'none',
       },
+    },
+    filesystem = {
       hijack_netrw_behavior = 'open_current',
       follow_current_file = {
         enabled = true,
@@ -86,6 +107,24 @@ return {
     end
 
     apply_neotree_tabs()
+
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = 'neo-tree',
+      callback = function(ev)
+        local function update()
+          local name = vim.api.nvim_buf_get_name(ev.buf)
+          local src = name:match 'neo%-tree%s+([%w_]+)%s+%['
+          if src then
+            vim.g.neotree_last_source = src
+          end
+        end
+        update()
+        vim.api.nvim_create_autocmd('BufEnter', {
+          buffer = ev.buf,
+          callback = update,
+        })
+      end,
+    })
 
     vim.api.nvim_create_autocmd('ColorScheme', {
       pattern = '*',
