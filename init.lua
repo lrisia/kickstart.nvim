@@ -859,23 +859,13 @@ require('lazy').setup({
         styles = {
           comments = { italic = false }, -- Disable italics in comments
         },
-        transparent = true,
       }
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-moon'
+      vim.cmd.colorscheme 'tokyonight-night'
     end,
-    opts = {
-      style = 'moon',
-      on_highlights = function(hl, c)
-        hl.DiffAdd = { bg = c.git.add, fg = 'NONE' }
-        hl.DiffChange = { bg = c.git.change, fg = 'NONE' }
-        hl.DiffDelete = { bg = c.git.delete }
-        hl.DiffText = { bg = c.git.text, bold = true }
-      end,
-    },
   },
 
   -- Highlight todo, notes, etc in comments
