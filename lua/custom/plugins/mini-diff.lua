@@ -25,32 +25,67 @@ return {
       end
     end
 
-    local function is_git_status_visible()
-      local ok_mgr, manager = pcall(require, 'neo-tree.sources.manager')
-      local ok_rdr, renderer = pcall(require, 'neo-tree.ui.renderer')
-      if not (ok_mgr and ok_rdr) then return false end
-      local state = manager.get_state('git_status')
-      return state and renderer.window_exists(state) or false
+    -- Source detection by scanning windows for an actual neo-tree buffer.
+    -- More reliable than state.winid (which gets stale when neo-tree's window
+    -- gets a non-neotree buffer, e.g. via hijack_netrw_behavior='open_current').
+    local function get_visible_neotree_source()
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype == 'neo-tree' then
+          local name = vim.api.nvim_buf_get_name(buf)
+          local src = name:match 'neo%-tree%s+([%w_]+)'
+          if src then return src end
+        end
+      end
+      return nil
     end
 
-    vim.api.nvim_create_autocmd('BufEnter', {
+    local function enable_overlay(buf, retries)
+      if not vim.api.nvim_buf_is_valid(buf) then return end
+      if not in_git_status_mode then return end
+      if vim.bo[buf].buftype ~= '' then return end
+      local mini_diff = require('mini.diff')
+      local buf_data = mini_diff.get_buf_data(buf)
+      if buf_data then
+        if not buf_data.overlay then pcall(mini_diff.toggle_overlay, buf) end
+        return
+      end
+      if retries > 0 then vim.defer_fn(function() enable_overlay(buf, retries - 1) end, 100) end
+    end
+
+    local function sync_state()
+      local visible = get_visible_neotree_source()
+      if visible == 'git_status' and not in_git_status_mode then
+        in_git_status_mode = true
+        set_overlay_all(true)
+      elseif visible == 'filesystem' and in_git_status_mode then
+        in_git_status_mode = false
+        set_overlay_all(false)
+      end
+      -- visible == nil → neo-tree closed; preserve mode and ensure current buffer matches
+      if in_git_status_mode then enable_overlay(vim.api.nvim_get_current_buf(), 0) end
+    end
+
+    vim.api.nvim_create_autocmd({ 'BufWinEnter', 'BufEnter', 'WinClosed', 'WinEnter' }, {
       group = group,
+      callback = function(args)
+        vim.schedule(sync_state)
+        if args.event ~= 'BufEnter' and args.event ~= 'BufWinEnter' then return end
+        if vim.bo[args.buf].buftype ~= '' or vim.bo[args.buf].filetype == 'neo-tree' then return end
+        -- mini.diff may attach AFTER our BufEnter; retry until data is ready
+        vim.defer_fn(function() enable_overlay(args.buf, 5) end, 50)
+      end,
+    })
+
+    -- Telescope picked a file → user is done with git review, force-disable overlays
+    vim.api.nvim_create_autocmd('User', {
+      group = group,
+      pattern = 'TelescopeFileOpened',
       callback = function()
-        if vim.bo.filetype ~= 'neo-tree' then return end
-        local bufname = vim.api.nvim_buf_get_name(0)
-        if bufname:match('git_status') then
-          in_git_status_mode = true
-          set_overlay_all(true)
-          return
+        if in_git_status_mode then
+          in_git_status_mode = false
+          set_overlay_all(false)
         end
-        -- Defer disable: if neo-tree is closing or user ended up off git_status,
-        -- a transient filesystem-buffer enter shouldn't kill overlays.
-        vim.schedule(function()
-          if vim.bo.filetype == 'neo-tree' and not is_git_status_visible() then
-            in_git_status_mode = false
-            set_overlay_all(false)
-          end
-        end)
       end,
     })
 
@@ -70,15 +105,14 @@ return {
     vim.keymap.set('n', '<leader>go', function()
       local mini_diff = require('mini.diff')
       local buf = vim.api.nvim_get_current_buf()
-      if mini_diff.get_buf_data(buf) then
-        mini_diff.toggle_overlay(buf)
-        local buf_data = mini_diff.get_buf_data(buf)
-        if buf_data and not buf_data.overlay then
-          in_git_status_mode = false
-        end
-      else
+      local buf_data = mini_diff.get_buf_data(buf)
+      if not buf_data then
         vim.notify('mini.diff: buffer ยังไม่พร้อม', vim.log.levels.WARN)
+        return
       end
+      -- Disabling: exit auto-mode FIRST so MiniDiffUpdated won't snap it back on
+      if buf_data.overlay then in_git_status_mode = false end
+      mini_diff.toggle_overlay(buf)
     end, { desc = '[G]it [O]verlay toggle' })
   end,
 }
