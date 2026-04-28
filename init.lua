@@ -237,6 +237,13 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+-- [[ Custom modules ]]
+--  Pure-Lua modules under `lua/custom/`. Add a `require` line for each new
+--  file you drop into that directory. Plugin specs in `lua/custom/plugins/`
+--  are auto-imported by lazy.nvim and don't need to be listed here.
+require 'custom.quick_quit'
+require 'custom.auto_save'
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
