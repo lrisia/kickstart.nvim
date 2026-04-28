@@ -16,6 +16,13 @@ return {
     {
       '\\',
       function()
+        -- Case 1: inside a diffview tab → close diffview
+        local ok_dv, dv_lib = pcall(require, 'diffview.lib')
+        if ok_dv and dv_lib.get_current_view() then
+          vim.cmd 'DiffviewClose'
+          return
+        end
+        -- Case 2: neo-tree visible → close it
         local manager = require 'neo-tree.sources.manager'
         local renderer = require 'neo-tree.ui.renderer'
         for _, src in ipairs { 'filesystem', 'git_status' } do
@@ -25,6 +32,7 @@ return {
             return
           end
         end
+        -- Case 3: nothing open → reveal neo-tree with last source
         local last = vim.g.neotree_last_source or 'filesystem'
         if last == 'filesystem' then
           vim.cmd 'Neotree reveal source=filesystem'
@@ -32,7 +40,7 @@ return {
           vim.cmd('Neotree focus source=' .. last)
         end
       end,
-      desc = 'NeoTree toggle',
+      desc = 'NeoTree / Diffview toggle',
       silent = true,
     },
   },
@@ -43,6 +51,19 @@ return {
       mappings = {
         ['\\'] = 'close_window',
         ['<space>'] = 'none',
+        -- Bypass loading git_status: jump straight to diffview
+        ['>'] = function()
+          vim.schedule(function()
+            pcall(require('neo-tree.command').execute, { action = 'close' })
+            vim.cmd 'DiffviewOpen'
+          end)
+        end,
+        ['<'] = function()
+          vim.schedule(function()
+            pcall(require('neo-tree.command').execute, { action = 'close' })
+            vim.cmd 'DiffviewOpen'
+          end)
+        end,
       },
     },
     filesystem = {
@@ -123,6 +144,59 @@ return {
           buffer = ev.buf,
           callback = update,
         })
+      end,
+    })
+
+    -- Redirect: entering neo-tree's git_status (via Git tab click or `>`) → close
+    -- neo-tree and open diffview instead. Reset last_source to filesystem so the
+    -- next `\` opens Files, not the redirect again.
+    vim.api.nvim_create_autocmd('BufEnter', {
+      group = vim.api.nvim_create_augroup('NeotreeGitToDiffview', { clear = true }),
+      callback = function(ev)
+        if vim.bo[ev.buf].filetype ~= 'neo-tree' then return end
+        local name = vim.api.nvim_buf_get_name(ev.buf)
+        if not name:match 'neo%-tree%s+git_status%s+%[' then return end
+        vim.schedule(function()
+          pcall(require('neo-tree.command').execute, { action = 'close' })
+          vim.g.neotree_last_source = 'filesystem'
+          vim.cmd 'DiffviewOpen'
+        end)
+      end,
+    })
+
+    -- Auto-open neo-tree fullscreen when the user lands on an empty unnamed
+    -- buffer with no real file buffers anywhere (bare `nvim`, after closing
+    -- the last buffer, after exiting diffview, etc.). hijack_netrw_behavior
+    -- = 'open_current' makes it take over the current window = fullscreen.
+    local function is_empty_buffer(buf)
+      if vim.api.nvim_buf_get_name(buf) ~= '' then return false end
+      if vim.bo[buf].buftype ~= '' then return false end
+      if vim.api.nvim_buf_line_count(buf) > 1 then return false end
+      return (vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] or '') == ''
+    end
+    local function has_any_real_buffer()
+      for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        if
+          vim.api.nvim_buf_is_loaded(b)
+          and vim.bo[b].buflisted
+          and vim.bo[b].buftype == ''
+          and vim.api.nvim_buf_get_name(b) ~= ''
+        then
+          return true
+        end
+      end
+      return false
+    end
+    vim.api.nvim_create_autocmd({ 'VimEnter', 'BufEnter' }, {
+      group = vim.api.nvim_create_augroup('NeotreeAutoOpenWhenEmpty', { clear = true }),
+      callback = function(ev)
+        if not is_empty_buffer(ev.buf) then return end
+        if has_any_real_buffer() then return end
+        vim.schedule(function()
+          if is_empty_buffer(vim.api.nvim_get_current_buf()) and not has_any_real_buffer() then
+            vim.cmd 'Neotree reveal source=filesystem'
+          end
+        end)
       end,
     })
 

@@ -250,8 +250,8 @@ end
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
--- Remove '~' in buffer
-vim.opt.fillchars:append { eob = ' ' }
+-- Remove '~' in buffer and the dashed filler in diff windows (diffview, :diffsplit)
+vim.opt.fillchars:append { eob = ' ', diff = ' ' }
 
 -- [[ Configure and install plugins ]]
 --
@@ -394,37 +394,16 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
-      local actions = require 'telescope.actions'
-      local action_state = require 'telescope.actions.state'
-      local function switch_neotree_to_filesystem()
-        vim.g.neotree_last_source = 'filesystem'
-        -- Signal listeners (mini-diff) that the user has moved on from git review,
-        -- regardless of whether neo-tree is currently visible.
-        vim.api.nvim_exec_autocmds('User', { pattern = 'TelescopeFileOpened' })
-        local ok_mgr, manager = pcall(require, 'neo-tree.sources.manager')
-        local ok_rdr, renderer = pcall(require, 'neo-tree.ui.renderer')
-        if not (ok_mgr and ok_rdr) then return end
-        local gs = manager.get_state 'git_status'
-        if not (gs and renderer.window_exists(gs)) then return end
-        local cur_win = vim.api.nvim_get_current_win()
-        require('neo-tree.command').execute { action = 'close' }
-        vim.cmd 'Neotree show source=filesystem'
-        if vim.api.nvim_win_is_valid(cur_win) then vim.api.nvim_set_current_win(cur_win) end
-      end
-      local function wrap_select_default(prompt_bufnr)
-        local entry = action_state.get_selected_entry()
-        local is_file = entry and (entry.path or entry.filename) ~= nil
-        actions.select_default(prompt_bufnr)
-        if is_file then vim.schedule(switch_neotree_to_filesystem) end
-      end
-
       require('telescope').setup {
-        defaults = {
-          mappings = {
-            i = { ['<CR>'] = wrap_select_default },
-            n = { ['<CR>'] = wrap_select_default },
-          },
-        },
+        -- You can put your default mappings / updates / etc. in here
+        --  All the info you're looking for is in `:help telescope.setup()`
+        --
+        -- defaults = {
+        --   mappings = {
+        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+        --   },
+        -- },
+        -- pickers = {}
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },
         },
