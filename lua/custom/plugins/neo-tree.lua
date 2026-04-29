@@ -124,12 +124,33 @@ return {
   ---@module 'neo-tree'
   ---@type neotree.Config
   opts = {
+    commands = {
+      -- Override default `y`/`Y` (which mark a node for neo-tree's internal
+      -- paste) with system-clipboard path copy. Internal cut/paste is still
+      -- reachable via `x` (cut) + `p` (paste).
+      copy_relative_path = function(state)
+        local node = state.tree:get_node()
+        if not node then return end
+        local rel = vim.fn.fnamemodify(node:get_id(), ':.')
+        vim.fn.setreg('+', rel)
+        vim.notify('Copied: ' .. rel)
+      end,
+      copy_absolute_path = function(state)
+        local node = state.tree:get_node()
+        if not node then return end
+        local path = node:get_id()
+        vim.fn.setreg('+', path)
+        vim.notify('Copied: ' .. path)
+      end,
+    },
     window = {
       mappings = {
         -- Route buffer-local `\` through smart_toggle instead of neo-tree's
         -- built-in `close_window` so the flash guard runs.
         ['\\'] = smart_toggle,
         ['<space>'] = 'none',
+        ['y'] = 'copy_relative_path',
+        ['Y'] = 'copy_absolute_path',
       },
     },
     filesystem = {
