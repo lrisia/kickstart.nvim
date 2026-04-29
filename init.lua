@@ -243,6 +243,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --  are auto-imported by lazy.nvim and don't need to be listed here.
 require 'custom.quick_quit'
 require 'custom.auto_save'
+require 'custom.telescope_diffview'
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
