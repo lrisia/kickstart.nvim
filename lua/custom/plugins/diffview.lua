@@ -44,6 +44,34 @@ return {
     vim.keymap.set({ 'n', 'v' }, '<ScrollWheelDown>', wheel 'down', { desc = 'Wheel down (sync diff panes)' })
     vim.keymap.set({ 'n', 'v' }, '<ScrollWheelUp>', wheel 'up', { desc = 'Wheel up (sync diff panes)' })
 
+    -- Exit diffview onto the current entry's file with neo-tree filesystem in
+    -- the sidebar. Same end state as `\` while inside a diffview tab, but the
+    -- focused file is whatever the cursor was on (not just the last buffer).
+    --
+    -- Built on diffview's public `goto_file_edit` action so we don't have to
+    -- reach into internal view fields (cur_entry, adapter, …). The action
+    -- synchronously switches to the previous non-diffview tabpage (or creates
+    -- one) with the file opened; we then close the now-background diffview
+    -- tab and reveal in neo-tree.
+    local function exit_to_file()
+      local ok, actions = pcall(require, 'diffview.actions')
+      if not ok then return end
+
+      local dv_tab = vim.api.nvim_get_current_tabpage()
+      actions.goto_file_edit()
+
+      -- If we're still on the same tab, the action bailed (e.g. cursor not on
+      -- a valid entry) — leave diffview alone.
+      if vim.api.nvim_get_current_tabpage() == dv_tab then return end
+
+      if vim.api.nvim_tabpage_is_valid(dv_tab) then
+        vim.cmd(vim.api.nvim_tabpage_get_number(dv_tab) .. 'tabclose')
+      end
+
+      vim.g.neotree_last_source = 'filesystem'
+      vim.cmd 'Neotree reveal source=filesystem'
+    end
+
     require('diffview').setup {
       -- Sync scroll + cursor between the old/new diff panes when keyboard-
       -- driven (j/k, <C-d>, etc.) — scrollbind alone covers that case once
@@ -54,6 +82,17 @@ return {
           vim.opt_local.scrollbind = true
           vim.opt_local.cursorbind = true
         end,
+      },
+      keymaps = {
+        view = {
+          { 'n', 'go', exit_to_file, { desc = '[G]o [O]riginal file (exit diffview, reveal in neo-tree)' } },
+        },
+        file_panel = {
+          { 'n', 'go', exit_to_file, { desc = '[G]o [O]riginal file (exit diffview, reveal in neo-tree)' } },
+        },
+        file_history_panel = {
+          { 'n', 'go', exit_to_file, { desc = '[G]o [O]riginal file (exit diffview, reveal in neo-tree)' } },
+        },
       },
     }
   end,
