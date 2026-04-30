@@ -242,6 +242,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --  file you drop into that directory. Plugin specs in `lua/custom/plugins/`
 --  are auto-imported by lazy.nvim and don't need to be listed here.
 require 'custom.quick_quit'
+require 'custom.close_buffer'
 require 'custom.auto_save'
 require 'custom.telescope_diffview'
 

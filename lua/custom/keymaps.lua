@@ -24,3 +24,9 @@ vim.keymap.set({ 'n', 'v' }, '<leader>D', 'D', { desc = 'Cut to end of line' })
 local quick_quit = require 'custom.quick_quit'
 vim.keymap.set('n', '<leader>q', quick_quit.modal, { desc = 'Quit nvim' })
 vim.keymap.set('n', '<leader>ๆ', quick_quit.modal, { desc = 'Quit nvim (Thai char)' })
+
+-- Buffer close helpers
+local close_buffer = require 'custom.close_buffer'
+vim.keymap.set('n', '<leader>bd', close_buffer.current, { desc = '[B]uffer [D]elete (keep window)' })
+vim.keymap.set('n', '<leader>bD', close_buffer.others, { desc = '[B]uffer close all except current' })
+vim.keymap.set('n', '<leader>bA', close_buffer.all, { desc = '[B]uffer close [A]ll' })

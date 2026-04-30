@@ -124,6 +124,14 @@ return {
   ---@module 'neo-tree'
   ---@type neotree.Config
   opts = {
+    default_component_configs = {
+      -- Disable the gradient fade neo-tree applies to filenames that overflow
+      -- the window width. We want hard truncation so long names are still
+      -- legible (and the user can `zl` to scroll horizontally).
+      container = {
+        enable_character_fade = false,
+      },
+    },
     commands = {
       -- Override default `y`/`Y` (which mark a node for neo-tree's internal
       -- paste) with system-clipboard path copy. Internal cut/paste is still
