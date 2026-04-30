@@ -164,9 +164,6 @@ vim.o.scrolloff = 2
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -241,6 +238,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --  Pure-Lua modules under `lua/custom/`. Add a `require` line for each new
 --  file you drop into that directory. Plugin specs in `lua/custom/plugins/`
 --  are auto-imported by lazy.nvim and don't need to be listed here.
+require 'custom.options'
 require 'custom.quick_quit'
 require 'custom.close_buffer'
 require 'custom.auto_save'
