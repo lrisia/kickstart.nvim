@@ -63,8 +63,13 @@ end
 -- with two trees side-by-side.
 local function current_window_shows_real_file()
   local buf = vim.api.nvim_get_current_buf()
+  -- `nowrite` is what image.nvim sets on hijacked image buffers (you can
+  -- view but not save them). Treat those as real files so opening neo-tree
+  -- while looking at an image gives a sidebar instead of taking over the
+  -- whole window.
+  local bt = vim.bo[buf].buftype
   return vim.bo[buf].buflisted
-    and vim.bo[buf].buftype == ''
+    and (bt == '' or bt == 'nowrite')
     and vim.api.nvim_buf_get_name(buf) ~= ''
 end
 
