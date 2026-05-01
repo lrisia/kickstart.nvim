@@ -18,11 +18,11 @@ return {
     --   \xee\x82\xb5 = U+E0B5 (rounded right thin)  \xee\x82\xb7 = U+E0B7 (rounded left thin)
     local separators = {
       rounded = {
-        section = { left = '', right = '' },
+        section = { left = '\xee\x82\xb4', right = '\xee\x82\xb6' },
         component = { left = '|', right = '|' },
       },
       slant = {
-        section = { left = '', right = '' },
+        section = { left = '\xee\x82\xb0', right = '\xee\x82\xb2' },
         component = { left = '|', right = '|' },
       },
       plain = {
@@ -42,11 +42,47 @@ return {
     -- nvim_set_hl which would replace the whole highlight.
     local function transparent_middle()
       local modes = { 'normal', 'insert', 'visual', 'replace', 'command', 'inactive', 'terminal' }
-      for _, mode in ipairs(modes) do
-        vim.cmd('hi lualine_c_' .. mode .. ' guibg=NONE')
+      local sections = { 'c', 'x' }
+      local severities = { 'error', 'warn', 'info', 'hint' }
+      for _, sec in ipairs(sections) do
+        for _, mode in ipairs(modes) do
+          vim.cmd('hi lualine_' .. sec .. '_' .. mode .. ' guibg=NONE')
+          -- diagnostics component creates per-severity groups that override
+          -- the section bg — clear those too.
+          for _, sev in ipairs(severities) do
+            vim.cmd('hi lualine_' .. sec .. '_diagnostics_' .. sev .. '_' .. mode .. ' guibg=NONE')
+          end
+        end
       end
       vim.cmd 'hi StatusLine guibg=NONE'
       vim.cmd 'hi StatusLineNC guibg=NONE'
+    end
+
+    -- Names of LSP clients attached to the current buffer, prefixed by a
+    -- gear icon. In-memory lookup, safe to call on every refresh.
+    local function lsp_name()
+      local clients = vim.lsp.get_clients { bufnr = 0 }
+      if #clients == 0 then
+        return ''
+      end
+      local names = {}
+      for _, c in ipairs(clients) do
+        table.insert(names, c.name)
+      end
+      return '\xef\x82\x85  ' .. table.concat(names, ', ')
+    end
+
+    -- Active Python virtualenv name. Reads $VIRTUAL_ENV — pure env var
+    -- lookup, no filesystem I/O, no caching needed.
+    local function python_venv()
+      if vim.bo.filetype ~= 'python' then
+        return ''
+      end
+      local venv = os.getenv 'VIRTUAL_ENV'
+      if not venv then
+        return ''
+      end
+      return '  ' .. vim.fn.fnamemodify(venv, ':t')
     end
 
     local function build_opts(style)
@@ -57,14 +93,29 @@ return {
           globalstatus = true,
           section_separators = sep.section,
           component_separators = sep.component,
-          disabled_filetypes = { statusline = { 'neo-tree', 'aerial' } },
+          disabled_filetypes = { statusline = { 'neo-tree' } },
         },
         sections = {
           lualine_a = { 'mode' },
           lualine_b = { 'branch', 'diff' },
-          lualine_c = { { 'filename', path = 1 } },
-          lualine_x = { 'diagnostics', 'filetype' },
-          lualine_y = { 'progress' },
+          lualine_c = {
+            { 'filetype', icon_only = true, padding = { left = 1, right = 0 }, separator = '', color = { bg = 'NONE' } },
+            { 'filename', path = 1, padding = { left = 0, right = 1 } },
+          },
+          lualine_x = {
+            {
+              'diagnostics',
+              symbols = {
+                error = '\xee\xaa\x87 ', -- U+EA87 codicon-error
+                warn = '\xee\xa9\xac ', -- U+EA6C codicon-warning
+                info = '\xee\xa9\xb4 ', -- U+EA74 codicon-info
+                hint = '\xee\xa9\xa1 ', -- U+EA61 codicon-lightbulb
+              },
+            },
+            lsp_name,
+            python_venv,
+          },
+          lualine_y = {},
           lualine_z = { 'location' },
         },
       }
