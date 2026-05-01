@@ -35,11 +35,25 @@ return {
       },
     }
 
+    -- Make the middle (c) section transparent across all modes. Two layers
+    -- need clearing: the per-mode lualine_c_* groups (the section itself)
+    -- and the underlying StatusLine group (which fills the gap between c
+    -- and x). `vim.cmd 'hi'` only changes bg, preserving fg — unlike
+    -- nvim_set_hl which would replace the whole highlight.
+    local function transparent_middle()
+      local modes = { 'normal', 'insert', 'visual', 'replace', 'command', 'inactive', 'terminal' }
+      for _, mode in ipairs(modes) do
+        vim.cmd('hi lualine_c_' .. mode .. ' guibg=NONE')
+      end
+      vim.cmd 'hi StatusLine guibg=NONE'
+      vim.cmd 'hi StatusLineNC guibg=NONE'
+    end
+
     local function build_opts(style)
       local sep = separators[style]
       return {
         options = {
-          theme = 'tokyonight',
+          theme = 'auto',
           globalstatus = true,
           section_separators = sep.section,
           component_separators = sep.component,
@@ -57,6 +71,13 @@ return {
     end
 
     require('lualine').setup(build_opts 'slant')
+    transparent_middle()
+
+    -- Re-apply transparency whenever the colorscheme changes (or lualine
+    -- re-runs setup) — those events overwrite the lualine_c_* highlights.
+    vim.api.nvim_create_autocmd('ColorScheme', {
+      callback = transparent_middle,
+    })
 
     vim.api.nvim_create_user_command('LualineStyle', function(args)
       local style = args.args
@@ -65,6 +86,7 @@ return {
         return
       end
       require('lualine').setup(build_opts(style))
+      transparent_middle()
       vim.cmd 'redrawstatus!'
       local s = separators[style]
       vim.notify(
