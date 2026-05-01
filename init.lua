@@ -243,6 +243,7 @@ require 'custom.quick_quit'
 require 'custom.close_buffer'
 require 'custom.auto_save'
 require 'custom.telescope_diffview'
+require 'custom.diagnostic_signs'
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
