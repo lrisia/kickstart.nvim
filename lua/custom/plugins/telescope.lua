@@ -19,6 +19,16 @@ return {
       callback = function()
         local builtin = require 'telescope.builtin'
         local actions = require 'telescope.actions'
+
+        -- Re-run setup to override kickstart's hardcoded borderchars with
+        -- rounded corners. Telescope's setup deep-merges defaults, so only
+        -- this key changes — everything else from kickstart stays intact.
+        require('telescope').setup {
+          defaults = {
+            borderchars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' },
+          },
+        }
+
         vim.keymap.set('n', '<leader><leader>', function()
           builtin.buffers {
             attach_mappings = function(_, map)

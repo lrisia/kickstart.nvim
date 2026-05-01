@@ -13,3 +13,8 @@ vim.opt.showtabline = 0
 -- avoids the chance of a stray `:Explore` opening netrw instead of neo-tree.
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+
+-- Default border for floating windows (LSP hover, signature help, diagnostic
+-- floats, :Lazy, :Mason, etc). Plugins that explicitly set their own border
+-- still win; this only fills in the default.
+vim.o.winborder = 'rounded'
