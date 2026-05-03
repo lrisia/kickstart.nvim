@@ -670,7 +670,7 @@ require('lazy').setup({
               },
               inlayHints = {
                 functionLikeReturnTypes = { enabled = true },
-                parameterNames = { enabled = 'all' }, -- 'none' | 'literals' | 'all'
+                parameterNames = { enabled = 'literals' }, -- 'none' | 'literals' | 'all'
                 parameterTypes = { enabled = true },
                 propertyDeclarationTypes = { enabled = true },
               },
