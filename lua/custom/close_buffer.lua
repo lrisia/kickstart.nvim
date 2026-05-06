@@ -10,6 +10,13 @@ local M = {}
 
 -- Close the current buffer while keeping the window/split open. Falls back to
 -- a fresh empty buffer when there's no usable alternate.
+--
+-- The trailing `BufEnter` re-fire is necessary: we switch *before* deleting
+-- (so the window stays put), which means the BufEnter that fires on the
+-- switch sees the old buffer still alive. neo-tree's auto-open-when-empty
+-- autocmd skips that pass. After the delete we re-fire BufEnter so the
+-- autocmd re-checks with the post-delete state and can take over the empty
+-- pane the same way `:bd` triggers it.
 function M.current()
   local cur = vim.api.nvim_get_current_buf()
   local alt = vim.fn.bufnr '#'
@@ -21,6 +28,7 @@ function M.current()
   if vim.api.nvim_buf_is_valid(cur) then
     pcall(vim.api.nvim_buf_delete, cur, { force = false })
   end
+  vim.api.nvim_exec_autocmds('BufEnter', { buffer = vim.api.nvim_get_current_buf() })
 end
 
 function M.others()
