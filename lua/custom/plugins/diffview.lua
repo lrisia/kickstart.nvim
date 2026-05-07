@@ -9,6 +9,20 @@ return {
     { '<leader>gd', '<cmd>DiffviewOpen<CR>', desc = '[G]it [D]iff (working tree vs HEAD)' },
     { '<leader>gh', '<cmd>DiffviewFileHistory %<CR>', desc = '[G]it [H]istory (current file)' },
     { '<leader>gH', '<cmd>DiffviewFileHistory<CR>', desc = '[G]it [H]istory (whole repo)' },
+    {
+      '<leader>ga',
+      function()
+        require('diffview.actions').toggle_stage_entry()
+      end,
+      desc = '[G]it [A]dd / unstage current file',
+    },
+    {
+      '<leader>gA',
+      function()
+        require('diffview.actions').stage_all()
+      end,
+      desc = '[G]it [A]dd all files to stage',
+    },
   },
   config = function()
     -- Mouse-wheel handler that syncs every diff pane in the current tab when
