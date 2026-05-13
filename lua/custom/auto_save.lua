@@ -45,7 +45,8 @@ vim.api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
     t:start(debounce_ms, 0, vim.schedule_wrap(function()
       if save_buffer(buf) then
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
-        vim.notify(string.format('[autosave] %s', name), vim.log.levels.INFO)
+        vim.notify(string.format('[auto save] %s', name), vim.log.levels.INFO)
+        vim.defer_fn(function() vim.cmd 'echo ""' end, 5000)
       end
       if timers[buf] == t then
         timers[buf] = nil
