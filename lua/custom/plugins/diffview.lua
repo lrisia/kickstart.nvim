@@ -96,6 +96,17 @@ return {
           vim.opt_local.scrollbind = true
           vim.opt_local.cursorbind = true
         end,
+        view_opened = function()
+          vim.api.nvim_create_autocmd('BufWritePost', {
+            group = vim.api.nvim_create_augroup('DiffviewRefreshOnSave', { clear = true }),
+            callback = function()
+              require('diffview.actions').refresh_files()
+            end,
+          })
+        end,
+        view_closed = function()
+          pcall(vim.api.nvim_del_augroup_by_name, 'DiffviewRefreshOnSave')
+        end,
       },
       keymaps = {
         view = {

@@ -29,6 +29,25 @@ return {
           },
         }
 
+        -- Override <leader>sf to include hidden & gitignored files.
+        -- Exclusions are passed to fd directly (not Telescope's Lua filter)
+        -- so heavy dirs are skipped at scan time, keeping the picker fast.
+        vim.keymap.set('n', '<leader>sf', function()
+          builtin.find_files {
+            find_command = {
+              'fd', '--type', 'f', '--hidden', '--no-ignore',
+              '--exclude', 'node_modules',
+              '--exclude', '.git',
+              '--exclude', 'dist',
+              '--exclude', 'build',
+              '--exclude', '.next',
+              '--exclude', '.turbo',
+              '--exclude', '.cache',
+              '--exclude', 'coverage',
+            },
+          }
+        end, { desc = '[S]earch [F]iles (all, incl. hidden & ignored)' })
+
         vim.keymap.set('n', '<leader><leader>', function()
           builtin.buffers {
             attach_mappings = function(_, map)

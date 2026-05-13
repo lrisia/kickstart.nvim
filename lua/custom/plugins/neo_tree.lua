@@ -183,6 +183,14 @@ return {
       window = {
         mappings = {
           ['\\'] = smart_toggle,
+          -- Skip neo-tree's git_status source (which triggers a slow git
+          -- scan just to be immediately closed by the BufEnter redirect).
+          -- Jump straight to diffview instead.
+          ['>'] = function()
+            require('neo-tree.command').execute { action = 'close' }
+            vim.g.neotree_last_source = 'filesystem'
+            vim.cmd 'DiffviewOpen'
+          end,
         },
       },
     },
