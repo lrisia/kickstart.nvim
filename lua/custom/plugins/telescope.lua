@@ -45,6 +45,7 @@ return {
               '--exclude', '.cache',
               '--exclude', 'coverage',
               '--exclude', '.graphify',
+              '--exclude', '.pnpm-store',
             },
           }
         end, { desc = '[S]earch [F]iles (all, incl. hidden & ignored)' })
