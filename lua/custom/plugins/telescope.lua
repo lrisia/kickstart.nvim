@@ -44,6 +44,7 @@ return {
               '--exclude', '.turbo',
               '--exclude', '.cache',
               '--exclude', 'coverage',
+              '--exclude', '.graphify',
             },
           }
         end, { desc = '[S]earch [F]iles (all, incl. hidden & ignored)' })
